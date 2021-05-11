@@ -1,3 +1,4 @@
+import re
 import apache_beam as beam
 from apache_beam.io import ReadFromText
 from apache_beam.options.pipeline_options import PipelineOptions
@@ -50,6 +51,7 @@ def chave_uf(elemento):
     chave = elemento['uf']
     return (chave, elemento)
 
+
 def casos_dengue(elemento):
     """
     Recebe uma tupla ('RS',[{},{}])
@@ -57,7 +59,11 @@ def casos_dengue(elemento):
     """
     uf, registros = elemento
     for registro in registros:
-        yield (f"{uf}-{registro['ano_mes']}", registro['casos'])
+        if bool(re.search(r'\d',registro['casos'])):
+            yield (f"{uf}-{registro['ano_mes']}", float(registro['casos']))
+        else:
+            yield (f"{uf}-{registro['ano_mes']}", 0.0)
+
 
 # pcollection
 dengue = (
@@ -71,6 +77,7 @@ dengue = (
     | "Criar chave pelo estado" >> beam.Map(chave_uf)
     | "Agrupar por UF" >> beam.GroupByKey()
     | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue)
+    | "Soma dos casos pela chave" >> beam.CombinePerKey(sum)
     | "print" >> beam.Map(print)
 )
 
