@@ -75,7 +75,12 @@ def chave_uf_ano_mes_de_lista(elemento):
     data,mm,uf = elemento
     anomes = '-'.join(data.split('-')[:2])
     chave = f'{uf}-{anomes}'
-    return chave,float(mm)
+    if float(mm) < 0:
+        mm = 0.0
+    else:
+        mm = float(mm)
+    return chave,mm
+
 
 # pcollection
 #dengue = (
@@ -100,6 +105,7 @@ chuvas = (
     ReadFromText('chuvas.csv',skip_header_lines=1)
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista,delimitador=',')
     | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista)
+    | "Soma dos casos pela chave (chuva)" >> beam.CombinePerKey(sum)
     | "Mostrar resultados de chuvas" >> beam.Map(print)
 )
 
