@@ -50,6 +50,14 @@ def chave_uf(elemento):
     chave = elemento['uf']
     return (chave, elemento)
 
+def casos_dengue(elemento):
+    """
+    Recebe uma tupla ('RS',[{},{}])
+    Retornar uma tupla ('RS-2014-12',8.0)
+    """
+    uf, registros = elemento
+    for registro in registros:
+        yield (f"{uf}-{registro['ano_mes']}", registro['casos'])
 
 # pcollection
 dengue = (
@@ -62,6 +70,7 @@ dengue = (
     | "Criar campo ano-mes" >> beam.Map(trata_datas)
     | "Criar chave pelo estado" >> beam.Map(chave_uf)
     | "Agrupar por UF" >> beam.GroupByKey()
+    | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue)
     | "print" >> beam.Map(print)
 )
 
