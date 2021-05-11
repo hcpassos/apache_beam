@@ -82,6 +82,14 @@ def chave_uf_ano_mes_de_lista(elemento):
     return chave,mm
 
 
+def arredonda(elemento):
+    """
+    Recebe uma tupla
+    Retorna uma tupla arredondada
+    """
+    chave, mm = elemento
+    return (chave,round(mm,1))
+
 # pcollection
 #dengue = (
 #    pipeline
@@ -106,6 +114,7 @@ chuvas = (
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista,delimitador=',')
     | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista)
     | "Soma dos casos pela chave (chuva)" >> beam.CombinePerKey(sum)
+    | "Arredonda resultados de chuvas" >> beam.Map(arredonda)
     | "Mostrar resultados de chuvas" >> beam.Map(print)
 )
 
