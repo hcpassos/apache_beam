@@ -1,6 +1,7 @@
 import re
 import apache_beam as beam
 from apache_beam.io import ReadFromText
+from apache_beam.io import WriteToText
 from apache_beam.options.pipeline_options import PipelineOptions
 from apache_beam.transforms.core import Map
 
@@ -90,6 +91,18 @@ def arredonda(elemento):
     chave, mm = elemento
     return (chave,round(mm,1))
 
+
+def descompactar_elementos(elemen):
+    chave, dados = elemen
+    chuva = str(dados.get('chuvas')).replace('[','')
+    dengue = str(dados.get('dengue')).replace('[','')
+    uf, ano, mes = chave.split('-')
+    return uf,ano,mes,str(chuva).replace(']',''),str(dengue).replace(']','')
+
+
+def preparar_csv(elemento, delimitador=';'):
+    return f"{delimitador}".join(elemento)
+
 # pcollection
 
 dengue = (
@@ -121,11 +134,19 @@ chuvas = (
 
 
 resultado = (
-    (chuvas,dengue)
-    | "Empilha as Pcollections" >> beam.Flatten()
-    | "Agrupa as Pcollections" >> beam.GroupByKey()
-    | "Mostrar resultados de chuvas" >> beam.Map(print)
+    #(chuvas,dengue)
+    #| "Empilha as pcols" >> beam.Flatten()
+    #| "Agrupa as pcols" >> beam.GroupByKey()
+    ({'chuvas': chuvas,'dengue': dengue})
+    | "Mesclar cols" >> beam.CoGroupByKey()
+    | "Descompactar elementos" >> beam.Map(descompactar_elementos)
+    | "Preparar CSV" >> beam.Map(preparar_csv)
+    #| "Mostrar resultados de chuvas" >> beam.Map(print)
 
 )
+
+header = 'UF;ANO;MES;CHUVA;DENGUE'
+
+resultado | 'Criar arquivo CSV' >> WriteToText('resultado',file_name_suffix='.csv',header = header)
 
 pipeline.run()
