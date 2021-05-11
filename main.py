@@ -91,32 +91,41 @@ def arredonda(elemento):
     return (chave,round(mm,1))
 
 # pcollection
-#dengue = (
-#    pipeline
-#    | "Leitura do dataset de dengue" >>
-#    ReadFromText('casos_dengue.txt', skip_header_lines=1)
-#    | "De texto para lista" >> beam.Map(texto_para_lista)
-#    | "De lista para dicionário" >>
-#    beam.Map(lista_para_dicionario, colunas_dengue)
-#    | "Criar campo ano-mes" >> beam.Map(trata_datas)
-#    | "Criar chave pelo estado" >> beam.Map(chave_uf)
-#    | "Agrupar por UF" >> beam.GroupByKey()
-#    | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue)
-#    | "Soma dos casos pela chave" >> beam.CombinePerKey(sum)
-#    | "print" >> beam.Map(print)
-#)
+
+dengue = (
+   pipeline
+   | "Leitura do dataset de dengue" >>
+   ReadFromText('sample_casos_dengue.txt', skip_header_lines=1)
+   | "De texto para lista" >> beam.Map(texto_para_lista)
+   | "De lista para dicionário" >>
+   beam.Map(lista_para_dicionario, colunas_dengue)
+   | "Criar campo ano-mes" >> beam.Map(trata_datas)
+   | "Criar chave pelo estado" >> beam.Map(chave_uf)
+   | "Agrupar por UF" >> beam.GroupByKey()
+   | "Descompactar casos de dengue" >> beam.FlatMap(casos_dengue)
+   | "Soma dos casos pela chave" >> beam.CombinePerKey(sum)
+   #| "print" >> beam.Map(print)
+)
 
 
 chuvas = (
     pipeline
     | "leitura do dataset de chuvas" >>
-    ReadFromText('chuvas.csv',skip_header_lines=1)
+    ReadFromText('sample_chuvas.csv',skip_header_lines=1)
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista,delimitador=',')
     | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista)
     | "Soma dos casos pela chave (chuva)" >> beam.CombinePerKey(sum)
     | "Arredonda resultados de chuvas" >> beam.Map(arredonda)
-    | "Mostrar resultados de chuvas" >> beam.Map(print)
+    #| "Mostrar resultados de chuvas" >> beam.Map(print)
 )
 
+
+resultado = (
+    (chuvas,dengue)
+    | "Empilha as Pcollections" >> beam.Flatten()
+    | "Agrupa as Pcollections" >> beam.GroupByKey()
+    | "Mostrar resultados de chuvas" >> beam.Map(print)
+
+)
 
 pipeline.run()
