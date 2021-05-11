@@ -66,6 +66,17 @@ def casos_dengue(elemento):
             yield (f"{uf}-{registro['ano_mes']}", 0.0)
 
 
+def chave_uf_ano_mes_de_lista(elemento):
+    """
+    Receber uma lista de elementos
+    REtornar uma tupla contendo uma chave e o valor de uma chuva
+    em mm ('UF-ANO-MES',1.3)
+    """
+    data,mm,uf = elemento
+    anomes = '-'.join(data.split('-')[:2])
+    chave = f'{uf}-{anomes}'
+    return chave,float(mm)
+
 # pcollection
 #dengue = (
 #    pipeline
@@ -88,6 +99,7 @@ chuvas = (
     | "leitura do dataset de chuvas" >>
     ReadFromText('chuvas.csv',skip_header_lines=1)
     | "De texto para lista (chuvas)" >> beam.Map(texto_para_lista,delimitador=',')
+    | "Criando a chave UF-ANO-MES" >> beam.Map(chave_uf_ano_mes_de_lista)
     | "Mostrar resultados de chuvas" >> beam.Map(print)
 )
 
